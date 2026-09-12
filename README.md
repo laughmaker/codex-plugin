@@ -60,6 +60,11 @@ node codex-theme.mjs restore
 - 验证：语法通过；直接启动在已有实例运行时正常退出并报告实例复用；实际 `apply` 因 Codex 未退出而按预期停止。完整退出后的 CDP 启动和主题注入仍待验证。
 - 更正：`allowDevtools=false`、端口未监听和 Chrome 的默认目录策略，都不足以证明此 Codex 构建禁用了 CDP。原生崩溃根因尚未确定。
 
+## 2026-09-12 引用块内边距
+
+- 聊天 Markdown、左侧 Markdown 页面和 CodeMirror 编辑器中的引用块左右内边距统一为 `20px`。
+- 代码块（截图所示的三反引号 `pre` 区域）左右内边距也统一为 `20px`，并使用 `!important` 覆盖 Codex 原生规则。
+
 ## 2026-09-12 布局修复
 
 - Markdown 文件：列表标记实时着色并增加悬挂缩进；H1–H4 使用分级配色。
