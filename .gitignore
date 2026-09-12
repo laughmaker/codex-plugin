@@ -1,0 +1,16 @@
+# Temporary diagnostics, screenshots and generated verification output
+tmp/
+
+# Local backup copies are kept outside the source history
+backups/
+
+# macOS and editor noise
+.DS_Store
+.idea/
+.vscode/
+
+# Node/tooling output
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
