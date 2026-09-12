@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { execFile, spawn } from "node:child_process";
+import { mkdirSync, openSync, closeSync } from "node:fs";
 import { promisify } from "node:util";
+import { codexLaunchEnv } from "./script/codex-launch-env.mjs";
 
 const execFileAsync = promisify(execFile);
 const APP_PATH = "/Applications/ChatGPT.app";
@@ -19,6 +21,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function run(file, args) {
   const { stdout = "" } = await execFileAsync(file, args, {
     maxBuffer: 2 * 1024 * 1024,
+    timeout: 15_000,
+    env: codexLaunchEnv(),
   });
   return stdout.trim();
 }
@@ -86,42 +90,47 @@ async function cdpReady() {
   }
 }
 
-async function waitForCdp(timeoutMs = 30_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await cdpReady()) return;
-    await sleep(300);
-  }
-  throw new Error("等待 Codex 本机调试端口超时。应用安装包未被修改。");
+async function appVersion() {
+  return run("/usr/bin/plutil", [
+    "-extract", "CFBundleShortVersionString", "raw", "-o", "-",
+    `${APP_PATH}/Contents/Info.plist`,
+  ]).catch(() => "unknown");
 }
 
-async function restartWithCdp() {
-  await assertPortSafe();
+async function startWithCdp() {
   if ((await mainPids()).length) {
-    await run("/usr/bin/osascript", [
-      "-e", `tell application id \"${BUNDLE_ID}\" to quit`,
-    ]).catch(() => "");
+    console.error("正在正常退出 Codex，以直接启动方式启用 CDP……");
+    await run("/usr/bin/osascript", ["-e", `tell application id "${BUNDLE_ID}" to quit`])
+      .catch(() => { throw new Error("系统未允许脚本退出 Codex。请保存内容并用 Cmd+Q 退出 Codex，再在系统终端运行本脚本。"); });
     const deadline = Date.now() + 15_000;
     while ((await mainPids()).length && Date.now() < deadline) await sleep(250);
-    if ((await mainPids()).length) {
-      throw new Error("Codex 未能正常退出；没有强制结束进程，也没有继续操作。");
-    }
+    if ((await mainPids()).length) throw new Error("Codex 尚未退出，已停止启动，请检查未保存内容或退出确认窗口。");
   }
-
+  await assertPortSafe();
+  const dir = new URL("./tmp/", import.meta.url);
+  mkdirSync(dir, { recursive: true });
+  const log = new URL(`codex-launch-${Date.now()}.log`, dir);
+  const fd = openSync(log, "wx", 0o600);
+  let child;
   try {
-    await run("/usr/bin/open", [
-      "-na", APP_PATH, "--args",
-      `--remote-debugging-address=${HOST}`,
-      `--remote-debugging-port=${PORT}`,
-    ]);
-  } catch {
-    const child = spawn(APP_EXECUTABLE, [
-      `--remote-debugging-address=${HOST}`,
-      `--remote-debugging-port=${PORT}`,
-    ], { detached: true, stdio: "ignore" });
-    child.unref();
+    child = spawn(APP_EXECUTABLE, [`--remote-debugging-port=${PORT}`], {
+      detached: true, stdio: ["ignore", fd, fd], env: codexLaunchEnv(),
+    });
+  } finally { closeSync(fd); }
+  let launchError;
+  child.on("error", error => { launchError = error; });
+  child.unref();
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (launchError || child.exitCode !== null || child.signalCode !== null) {
+      // Recover the normal app once if this launch failed; never retry CDP.
+      if (!(await mainPids()).length) await run("/usr/bin/open", ["-a", APP_PATH]).catch(() => {});
+      throw new Error(`Codex 调试启动提前退出（${launchError?.message ?? child.signalCode ?? child.exitCode}）。日志：${log.pathname}`);
+    }
+    if (await cdpReady()) { await assertPortSafe(); return; }
+    await sleep(300);
   }
-  await waitForCdp();
+  throw new Error(`Codex 已启动，但 9341 未就绪。未重复重启。日志：${log.pathname}`);
 }
 
 async function targets() {
@@ -384,13 +393,27 @@ async function main() {
   await verifyOfficialBundle();
   await assertPortSafe();
 
-  if (command === "apply" && !(await cdpReady())) await restartWithCdp();
-  if (!(await cdpReady())) {
+  if (command === "apply" && !(await cdpReady())) await startWithCdp();
+  const cdpAvailable = await cdpReady();
+  if (!cdpAvailable) {
     if (command === "restore") {
       console.log("Codex 当前未启用 CDP；页面重启后注入样式本身已不存在，无需恢复。");
       return;
     }
-    throw new Error("Codex 当前未启用本机 CDP。请先运行 apply。");
+    const diagnosis = {
+      command,
+      cdpAvailable: false,
+      codexVersion: await appVersion(),
+      port: PORT,
+      appRunning: (await mainPids()).length > 0,
+      restartedApp: false,
+      message: command === "status"
+        ? "Codex 当前未启用本机 CDP；主题未注入。"
+        : "Codex 当前未启用本机 CDP，已停止应用主题。为避免触发 Electron 启动崩溃，脚本不会自动退出或重启 Codex。",
+    };
+    console.log(JSON.stringify(diagnosis, null, 2));
+    if (command === "apply") process.exitCode = 1;
+    return;
   }
 
   const expression = command === "apply"

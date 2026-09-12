@@ -12,7 +12,7 @@ node codex-theme.mjs status
 node codex-theme.mjs restore
 ```
 
-`apply` 在 CDP 未开启时沿用原脚本行为：正常退出并重新启动 Codex，开启仅本机访问的 9341 端口；请先保存正在编辑的内容。CDP 已开启时直接注入。
+`apply` 在 CDP 9341 已开放时直接注入；否则先请求正常退出 Codex，再直接运行应用可执行文件并传入 `--remote-debugging-port=9341`。不使用此前多次崩溃的 `open -na` 路径。请保存正在编辑的内容；如果 Codex 拒绝退出，请用 Cmd+Q 退出后在系统终端执行脚本。启动日志保存在 `tmp/codex-launch-*.log`。启动提前退出时仅尝试一次普通启动恢复；端口等待超时不重复重启。
 
 样式在当前页面生命周期内生效，切换任务、打开新的 Markdown 文件会自动匹配；样式节点被移除时会补回。应用重启、整个 renderer 重载或新增窗口后需重新运行 `apply`，脚本不是后台常驻服务。`restore` 同时移除样式并断开观察器。
 
@@ -48,6 +48,17 @@ node codex-theme.mjs restore
 - 交接状态：`handoff/codex-theme-markdown/handoff.md`
 
 后续维护：应用升级后，维护者运行 `status`，用实际 Markdown 文件重新检查计算样式与视觉效果。
+
+## 2026-09-12 启动崩溃修复
+
+- 最新直接启动失败已定位：`tmp/codex-launch-1789227233917.log` 报 `electron: --openssl-legacy-provider is not allowed in NODE_OPTIONS`。来源为用户 `.zshrc` 第 153–156 行设置的 `NODE_OPTIONS`，脚本原先将其继承给 Electron。
+- `script/codex-launch-env.mjs` 为子进程清除 `NODE_OPTIONS`、`NODE_PATH` 和 `ELECTRON_RUN_AS_NODE`；直接启动与普通启动恢复均使用清理后的环境。不修改全局 shell 设置。
+- 该日志证明环境变量导致本次直接启动失败，尚不能证明此前全部 `v8::Context::Exit` 原生崩溃均由它引起。按用户要求保持现有 Codex 运行，本轮不做应用重启测试；最终 CDP 注入仍待完整启动验证。
+
+- 首轮临时停止自动重启，仅避免再次触发启动失败，并未恢复主题功能。
+- 后续改为直接启动应用可执行文件，加入退出等待、独立启动日志、提前退出检测和普通启动恢复。
+- 验证：语法通过；直接启动在已有实例运行时正常退出并报告实例复用；实际 `apply` 因 Codex 未退出而按预期停止。完整退出后的 CDP 启动和主题注入仍待验证。
+- 更正：`allowDevtools=false`、端口未监听和 Chrome 的默认目录策略，都不足以证明此 Codex 构建禁用了 CDP。原生崩溃根因尚未确定。
 
 ## 2026-09-12 布局修复
 
