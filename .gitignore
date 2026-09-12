@@ -4,6 +4,9 @@ tmp/
 # Local backup copies are kept outside the source history
 backups/
 
+# Agent workspace data (session memory and notes) is local-only
+.workbuddy/
+
 # macOS and editor noise
 .DS_Store
 .idea/
