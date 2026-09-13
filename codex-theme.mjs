@@ -12,7 +12,7 @@ const BUNDLE_ID = "com.openai.codex";
 const HOST = "127.0.0.1";
 const PORT = 9341;
 const STYLE_ID = "local-codex-readable-theme";
-const SCALE = 0.88;
+const SCALE = 0.90;
 const THEME_NAME = "readable";
 const command = process.argv[2] ?? "status";
 
