@@ -12,6 +12,7 @@ A local readability theme for the Codex desktop app. It improves Markdown render
 ## Highlights
 
 - Styles Markdown in both chat messages and the right-side file editor
+- Supports both light and dark modes and follows the appearance selected in Codex
 - Gives H1–H6 distinct sizes and six-level color hierarchy
 - Improves body text, bold text, links, horizontal rules, and images
 - Refines blockquotes, code blocks, inline code, and tables
@@ -29,6 +30,8 @@ The theme uses the local Chrome DevTools Protocol (CDP) to inject CSS into the o
 - It connects only to `127.0.0.1:9341`
 - It accepts only the verified, officially signed app and trusted Codex pages
 - It applies only to the current page lifecycle and does not run as a background service
+
+The injected stylesheet reads Codex's `data-theme` value, so switching between Light, Dark, and System appearance automatically selects the matching theme palette without running `apply` again.
 
 ## Requirements
 
@@ -71,6 +74,7 @@ The `status` command returns JSON. Common fields include:
 | --- | --- |
 | `applied` | Whether the theme stylesheet exists on the current page |
 | `observerInstalled` | Whether the style-preservation observer is installed |
+| `themeVariant` | The active Codex appearance detected by the theme |
 | `markdownMounted` | Whether chat Markdown or a Markdown editor is currently mounted |
 | `chatRoots` | Number of detected chat Markdown regions |
 | `markdownEditors` | Number of detected Markdown file editors |
@@ -81,19 +85,19 @@ The `status` command returns JSON. Common fields include:
 
 ## Known Limitations
 
-- The theme is currently designed and verified primarily for the dark interface
+- Light and dark palettes are supported; custom or future Codex appearance modes may require additional color mappings
 - You need to run `apply` again after restarting the app, reloading the renderer, or opening a new window
 - In the Markdown file editor, the current Codex DOM exposes H5 and H6 with the same class as H4, so these headings may share a color; chat Markdown can still distinguish H1–H6
 - The script currently uses a fixed application path and local port, so it does not support Windows, Linux, or custom installation locations
 
 ## Customization
 
-The theme styles live in `themeCss` and `editorCss` inside `codex-theme.mjs`. You can customize the color variables, font sizes, content width, and sidebar scale:
+The theme styles live in `themeCss` and `editorCss` inside `codex-theme.mjs`. Dark-mode variables are defined under `:root, [data-theme="dark"]`, while light-mode overrides are defined under `[data-theme="light"]`. You can customize the color variables, font sizes, content width, and sidebar scale:
 
 ```js
 const SCALE = 0.90;
 
-// Theme colors and typography variables are defined in themeCss under :root
+// Light and dark colors and typography variables are defined in themeCss
 ```
 
 Run `node codex-theme.mjs apply` again after making changes.

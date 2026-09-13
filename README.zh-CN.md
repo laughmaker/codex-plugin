@@ -12,6 +12,7 @@
 ## 功能亮点
 
 - 同时覆盖聊天消息中的 Markdown 与右侧 Markdown 文件编辑器
+- 同时兼容浅色与深色模式，并跟随 Codex 中选择的外观
 - 为 H1–H6 提供清晰的字号层级和六级配色
 - 优化正文、粗体、链接、分隔线与图片的显示效果
 - 改善引用块、代码块、行内代码和表格的可读性
@@ -29,6 +30,8 @@
 - 只连接本机 `127.0.0.1:9341`
 - 仅接受已验证的官方签名应用与 Codex 页面
 - 主题只在当前页面生命周期内生效，不会常驻后台
+
+注入的样式表会读取 Codex 的 `data-theme` 值。在浅色、深色和跟随系统三种外观之间切换时，会自动采用对应配色，无需重新运行 `apply`。
 
 ## 环境要求
 
@@ -71,6 +74,7 @@ node codex-theme.mjs apply
 | --- | --- |
 | `applied` | 当前页面是否存在主题样式表 |
 | `observerInstalled` | 样式保留观察器是否已安装 |
+| `themeVariant` | 主题检测到的当前 Codex 外观模式 |
 | `markdownMounted` | 当前页面是否已挂载聊天 Markdown 或 Markdown 编辑器 |
 | `chatRoots` | 当前检测到的聊天 Markdown 区域数量 |
 | `markdownEditors` | 当前检测到的 Markdown 文件编辑器数量 |
@@ -81,19 +85,19 @@ node codex-theme.mjs apply
 
 ## 已知限制
 
-- 当前主要针对 Codex 暗色界面设计和验证
+- 已支持浅色与深色配色；Codex 将来新增或自定义的外观模式可能需要补充颜色映射
 - 应用重启、页面渲染进程重载或新增窗口后，需要重新运行 `apply`
 - Markdown 文件编辑器中，Codex 当前会将 H5、H6 暴露为与 H4 相同的 DOM 类，因此三者可能显示为相同颜色；聊天 Markdown 仍可区分 H1–H6
 - 脚本目前使用固定应用路径和本地端口，不适用于 Windows、Linux 或自定义安装位置
 
 ## 自定义主题
 
-主题样式集中在 `codex-theme.mjs` 的 `themeCss` 与 `editorCss` 中。你可以修改颜色变量、字号、内容宽度以及边栏缩放比例：
+主题样式集中在 `codex-theme.mjs` 的 `themeCss` 与 `editorCss` 中。深色变量位于 `:root, [data-theme="dark"]`，浅色覆盖变量位于 `[data-theme="light"]`。你可以修改颜色变量、字号、内容宽度以及边栏缩放比例：
 
 ```js
 const SCALE = 0.90;
 
-// 主题颜色与排版变量位于 themeCss 的 :root 中
+// 浅色、深色配色与排版变量均位于 themeCss 中
 ```
 
 修改后重新运行 `node codex-theme.mjs apply` 即可看到效果。
