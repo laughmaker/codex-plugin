@@ -1,109 +1,114 @@
 # Codex Theme
 
-一套面向 Codex 桌面端的本地可读性主题，重点增强聊天区与 Markdown 文件编辑器的排版表现，并适当缩小左侧边栏字号，让信息密度与阅读体验更平衡。
+<p align="center">
+  <strong>English</strong> |
+  <a href="./README.zh-CN.md">简体中文</a>
+</p>
 
-![Codex Theme 效果预览](./cover.png)
+A local readability theme for the Codex desktop app. It improves Markdown rendering in chats and the file editor while slightly reducing the left sidebar scale for a denser, more balanced interface.
 
-## 功能亮点
+![Codex Theme preview](./cover.png)
 
-- 同时覆盖聊天消息中的 Markdown 与右侧 Markdown 文件编辑器
-- 为 H1–H6 提供清晰的字号层级和六级配色
-- 优化正文、粗体、链接、分隔线与图片的显示效果
-- 改善引用块、代码块、行内代码和表格的可读性
-- 修正无序列表圆点与多位数有序列表的缩进、换行表现
-- 让助手回复保持左对齐，并改善窄窗口下表格的滚动与换行
-- 将左侧边栏缩放为 `90%`，在不改变整体布局的前提下提升信息密度
-- 支持随时查看状态或撤销主题
+## Highlights
 
-## 工作方式
+- Styles Markdown in both chat messages and the right-side file editor
+- Gives H1–H6 distinct sizes and six-level color hierarchy
+- Improves body text, bold text, links, horizontal rules, and images
+- Refines blockquotes, code blocks, inline code, and tables
+- Fixes unordered-list bullets and indentation for multi-digit ordered lists
+- Keeps assistant responses left-aligned and improves table wrapping and scrolling in narrow windows
+- Scales the left sidebar to `90%` for better information density
+- Supports status inspection and one-command removal
 
-主题通过本机 Chrome DevTools Protocol（CDP）向官方 Codex 应用注入 CSS：
+## How It Works
 
-- 不修改 Codex 应用安装包
-- 不改写聊天内容或 Markdown 文件
-- 只连接本机 `127.0.0.1:9341`
-- 仅接受已验证的官方签名应用与 Codex 页面
-- 主题只在当前页面生命周期内生效，不会常驻后台
+The theme uses the local Chrome DevTools Protocol (CDP) to inject CSS into the official Codex app:
 
-## 环境要求
+- It does not modify the Codex application bundle
+- It does not rewrite chats or Markdown files
+- It connects only to `127.0.0.1:9341`
+- It accepts only the verified, officially signed app and trusted Codex pages
+- It applies only to the current page lifecycle and does not run as a background service
+
+## Requirements
 
 - macOS
-- 官方 Codex 桌面应用，安装于 `/Applications/ChatGPT.app`
-- 支持内置 `WebSocket` 的 Node.js；当前已验证版本为 Node.js `v26.8.1`
+- The official Codex desktop app installed at `/Applications/ChatGPT.app`
+- A Node.js version with built-in `WebSocket` support; currently verified with Node.js `v26.8.1`
 
-> 主题依赖 Codex 当前的内部 DOM 与 CSS 结构。Codex 更新后，如果界面结构发生变化，部分样式可能需要同步调整。
+> The theme depends on Codex's internal DOM and CSS structure. Some selectors may need to be updated after a Codex release changes the interface.
 
-## 使用方法
+## Usage
 
-下载或克隆本仓库，在仓库目录中运行：
+Download or clone this repository, then run the following commands from its directory:
 
 ```sh
-# 应用主题
+# Apply the theme
 node codex-theme.mjs apply
 
-# 查看当前状态
+# Inspect the current state
 node codex-theme.mjs status
 
-# 撤销主题
+# Remove the theme
 node codex-theme.mjs restore
 ```
 
-首次执行 `apply` 时，如果 Codex 尚未启用 CDP，脚本会请求正常退出应用，再使用本地调试端口重新启动。运行前请先保存正在编辑的内容。
+When you run `apply` and CDP is not already enabled, the script asks Codex to quit normally and relaunches it with a local debugging port. Save any work in progress before running the command.
 
-如果 Codex 未能自动退出，请使用 <kbd>Command</kbd> + <kbd>Q</kbd> 手动退出，然后在系统终端中重新执行：
+If Codex does not quit automatically, press <kbd>Command</kbd> + <kbd>Q</kbd> to quit it manually, then run this command again in your system terminal:
 
 ```sh
 node codex-theme.mjs apply
 ```
 
-启动日志会写入 `tmp/codex-launch-*.log`，便于排查启动问题。
+Launch logs are written to `tmp/codex-launch-*.log` for troubleshooting.
 
-## 状态说明
+## Status Output
 
-`status` 命令会输出 JSON，其中常用字段包括：
+The `status` command returns JSON. Common fields include:
 
-| 字段 | 含义 |
+| Field | Meaning |
 | --- | --- |
-| `applied` | 当前页面是否存在主题样式表 |
-| `observerInstalled` | 样式保留观察器是否已安装 |
-| `markdownMounted` | 当前页面是否已挂载聊天 Markdown 或 Markdown 编辑器 |
-| `chatRoots` | 当前检测到的聊天 Markdown 区域数量 |
-| `markdownEditors` | 当前检测到的 Markdown 文件编辑器数量 |
-| `editorComputed` | 编辑器正文、标题与表头的实际计算样式 |
-| `targetKind` / `targetUrl` | 实际操作的 Codex 页面目标 |
+| `applied` | Whether the theme stylesheet exists on the current page |
+| `observerInstalled` | Whether the style-preservation observer is installed |
+| `markdownMounted` | Whether chat Markdown or a Markdown editor is currently mounted |
+| `chatRoots` | Number of detected chat Markdown regions |
+| `markdownEditors` | Number of detected Markdown file editors |
+| `editorComputed` | Computed styles for editor text, headings, and table headers |
+| `targetKind` / `targetUrl` | The Codex page target that was inspected or modified |
 
-`applied: true` 仅表示主题已经注入，不代表当前页面一定打开了 Markdown 内容。长文档由 CodeMirror 虚拟化渲染，因此节点统计也不等同于整份文档的元素总数。
+`applied: true` means that the theme was injected; it does not necessarily mean that Markdown content is currently open. CodeMirror virtualizes long documents, so DOM node counts do not represent the total number of elements in a file.
 
-## 已知限制
+## Known Limitations
 
-- 当前主要针对 Codex 暗色界面设计和验证
-- 应用重启、页面渲染进程重载或新增窗口后，需要重新运行 `apply`
-- Markdown 文件编辑器中，Codex 当前会将 H5、H6 暴露为与 H4 相同的 DOM 类，因此三者可能显示为相同颜色；聊天 Markdown 仍可区分 H1–H6
-- 脚本目前使用固定应用路径和本地端口，不适用于 Windows、Linux 或自定义安装位置
+- The theme is currently designed and verified primarily for the dark interface
+- You need to run `apply` again after restarting the app, reloading the renderer, or opening a new window
+- In the Markdown file editor, the current Codex DOM exposes H5 and H6 with the same class as H4, so these headings may share a color; chat Markdown can still distinguish H1–H6
+- The script currently uses a fixed application path and local port, so it does not support Windows, Linux, or custom installation locations
 
-## 自定义主题
+## Customization
 
-主题样式集中在 `codex-theme.mjs` 的 `themeCss` 与 `editorCss` 中。你可以修改颜色变量、字号、内容宽度以及边栏缩放比例：
+The theme styles live in `themeCss` and `editorCss` inside `codex-theme.mjs`. You can customize the color variables, font sizes, content width, and sidebar scale:
 
 ```js
 const SCALE = 0.90;
 
-// 主题颜色与排版变量位于 themeCss 的 :root 中
+// Theme colors and typography variables are defined in themeCss under :root
 ```
 
-修改后重新运行 `node codex-theme.mjs apply` 即可看到效果。
+Run `node codex-theme.mjs apply` again after making changes.
 
-## 反馈与贡献
+## Feedback and Contributions
 
-如果 Codex 更新后出现样式失效，欢迎提交 Issue，并附上：
+If a Codex update breaks part of the theme, please open an Issue and include:
 
-- Codex 应用版本
-- Node.js 版本
-- `node codex-theme.mjs status` 的输出
-- 问题截图与可复现的 Markdown 示例
+- Your Codex app version
+- Your Node.js version
+- The output of `node codex-theme.mjs status`
+- A screenshot and a reproducible Markdown example
 
-也欢迎通过 Pull Request 改进选择器、兼容性或视觉细节。
+Pull Requests improving selectors, compatibility, or visual details are also welcome.
 
-## 免责声明
+## Disclaimer
 
-这是一个非官方的社区主题，与 OpenAI 无隶属或背书关系。请自行评估启用本地调试端口的风险，并仅在可信的本机环境中使用。
+This is an unofficial community theme and is not affiliated with or endorsed by OpenAI. Evaluate the risks of enabling a local debugging port and use it only in a trusted local environment.
