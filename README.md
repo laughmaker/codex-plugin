@@ -19,6 +19,7 @@ A local readability theme for the Codex desktop app. It improves Markdown render
 - Fixes unordered-list bullets and indentation for multi-digit ordered lists
 - Keeps assistant responses left-aligned and improves table wrapping and scrolling in narrow windows
 - Scales the left sidebar to `90%` for better information density
+- Expands `Usage remaining` by default when the account menu opens while keeping it collapsible
 - Supports status inspection and one-command removal
 
 ## How It Works

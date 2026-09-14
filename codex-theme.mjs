@@ -313,7 +313,7 @@ function installTheme(styleId, stateKey, css, editorSelector) {
     state.tokenRules = rules.length;
     return rules.join('\n');
   };
-  const state = { observer: null, tokenRules: 0 };
+  const state = { observer: null, tokenRules: 0, usageRowsInitialized: new WeakSet() };
   let style, lastSheetCount = -1, dynamic = '';
   const decorateLists = () => {
     for (const line of document.querySelectorAll(editorSelector + ' .cm-markdown-list-item')) {
@@ -335,6 +335,14 @@ function installTheme(styleId, stateKey, css, editorSelector) {
       line.style.setProperty('--local-list-marker-offset', -(width + 5) + 'px');
     }
   };
+  const expandUsageRemaining = () => {
+    for (const row of document.querySelectorAll('button, [role="menuitem"]')) {
+      if (row.textContent.trim().replace(/\s+/g, ' ') !== 'Usage remaining' ||
+          state.usageRowsInitialized.has(row)) continue;
+      state.usageRowsInitialized.add(row);
+      if (row.getAttribute('aria-expanded') !== 'true') row.click();
+    }
+  };
   const ensure = () => {
     if (!document.documentElement) return;
     style = document.getElementById(styleId);
@@ -348,6 +356,7 @@ function installTheme(styleId, stateKey, css, editorSelector) {
     const text = css + '\n' + dynamic;
     if (style.textContent !== text) style.textContent = text;
     decorateLists();
+    expandUsageRemaining();
   };
   ensure();
   state.observer = new MutationObserver(ensure);
