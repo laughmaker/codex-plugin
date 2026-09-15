@@ -336,8 +336,9 @@ function installTheme(styleId, stateKey, css, editorSelector) {
     }
   };
   const expandUsageRemaining = () => {
-    for (const row of document.querySelectorAll('button, [role="menuitem"]')) {
-      if (row.textContent.trim().replace(/\s+/g, ' ') !== 'Usage remaining' ||
+    for (const row of document.querySelectorAll('[role="menuitem"]')) {
+      const label = row.textContent.trim().replace(/\s+/g, ' ');
+      if (!label.startsWith('Usage remaining') ||
           state.usageRowsInitialized.has(row)) continue;
       state.usageRowsInitialized.add(row);
       if (row.getAttribute('aria-expanded') !== 'true') row.click();
